@@ -1,0 +1,56 @@
+#pragma kernel PrecomputeTwiddleFactorsAndInputIndices
+#pragma kernel HorizontalStepInverseFFT
+#pragma kernel VerticalStepInverseFFT
+
+
+RWTexture2D<float4> PrecomputeBuffer;
+Texture2D<float4> PrecomputedData;
+RWTexture2D<float2> Buffer0;
+RWTexture2D<float2> Buffer1;
+bool PingPong;
+uint Step;
+uint Size;
+
+float2 ComplexMult(float2 a, float2 b)
+{
+	return float2(a.r * b.r - a.g * b.g, a.r * b.g + a.g * b.r);
+}
+
+float2 ComplexExp(float2 a)
+{
+	return float2(cos(a.y), sin(a.y)) * exp(a.x);
+}
+
+[numthreads(8, 8, 1)]
+void HorizontalStepInverseFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = PrecomputedData[uint2(Step, id.x)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (PingPong)
+	{
+		Buffer1[id.xy] = Buffer0[uint2(inputsIndices.x, id.y)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer0[uint2(inputsIndices.y, id.y)]);
+	}
+	else
+	{
+		Buffer0[id.xy] = Buffer1[uint2(inputsIndices.x, id.y)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer1[uint2(inputsIndices.y, id.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void VerticalStepInverseFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = PrecomputedData[uint2(Step, id.y)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (PingPong)
+	{
+		Buffer1[id.xy] = Buffer0[uint2(id.x, inputsIndices.x)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer0[uint2(id.x, inputsIndices.y)]);
+	}
+	else
+	{
+		Buffer0[id.xy] = Buffer1[uint2(id.x, inputsIndices.x)]
+			+ ComplexMult(float2(data.r, -data.g), Buffer1[uint2(id.x, inputsIndices.y)]);
+	}
+}

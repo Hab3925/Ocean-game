@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    public Transform Cam;
+    public Transform cam;
     
     [SerializeField, Range(0f, 100f)]
     float speed = 12f;
@@ -16,6 +16,12 @@ public class CameraController : MonoBehaviour
     float mouseX;
     float mouseY;
     Vector3 movement;
+
+    void Awake()
+    {
+        if(Camera.main.depthTextureMode != DepthTextureMode.Depth)
+            Camera.main.depthTextureMode = DepthTextureMode.Depth;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -36,8 +42,8 @@ public class CameraController : MonoBehaviour
         yRotation -= mouseY;
         xRotation += mouseX;
         yRotation = Mathf.Clamp(yRotation, -90f, 90f);
-        Cam.localRotation = Quaternion.Euler(yRotation, xRotation, 0f);
+        cam.localRotation = Quaternion.Euler(yRotation, xRotation, 0f);
 
-        Cam.Translate(movement * speed * Time.deltaTime);
+        cam.Translate(movement * speed * Time.deltaTime);
     }
 }
